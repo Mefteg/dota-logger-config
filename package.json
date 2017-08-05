@@ -7,12 +7,13 @@
         "start": "electron .",
         "install": "electron-rebuild"
     },
-    "repository": "https://github.com/electron/electron-quick-start",
+    "repository": "https://github.com/Mefteg/dota-logger-config",
     "keywords": [
         "Electron",
         "ESP8266",
         "DotA",
-        "Logger"
+        "Logger",
+        "Config"
     ],
     "author": "Mefteg",
     "license": "CC0-1.0",
