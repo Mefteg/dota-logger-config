@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>DotA Logger Config</title>
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <h1 class="col">DotA Logger Config</h1>
+        </div>
+        <div class="row">
+            <div class="col">
+                <div class="form-group">
+                    <label for="devices">Devices</label>
+                    <select class="form-control" id="devices">
+                        <option>-</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <button class="btn btn-success btn-block" type="button" onclick="javascript:connect()">Connect</button>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <button class="btn btn-danger btn-block" type="button" onclick="javascript:disconnect()">Disconnect</button>
+            </div>
+        </div>
+        <hr/>
+        <div class="row">
+            <div class="col">
+                <div class="input-group">
+                    <input id="ssid" type="text" class="form-control" placeholder="SSID">
+                    <span class="input-group-btn">
+                        <button class="btn btn-primary" type="button" onclick="javascript:submitValue('ssid')">Submit</button>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <div class="input-group">
+                    <input id="password" type="password" class="form-control" placeholder="Password">
+                    <span class="input-group-btn">
+                        <button class="btn btn-primary" type="button" onclick="javascript:submitValue('password')">Submit</button>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <div class="input-group">
+                    <input id="userid" type="text" class="form-control" placeholder="User Id">
+                    <span class="input-group-btn">
+                        <button class="btn btn-primary" type="button" onclick="javascript:submitValue('userid')">Submit</button>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <button class="btn btn-warning btn-block" type="button" onclick="javascript:reset()">Reset</button>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-3">
+            </div>
+            <div id="toast-container" class="col-6">
+            </div>
+            <div class="col-3">
+            </div>
+        </div>
+    </div>
+
+    <script>window.$ = window.jQuery = require('./js/jquery-3.2.1.min.js');</script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js" integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn" crossorigin="anonymous"></script>
+</body>
+
+<script>
+// You can also require other files to run in this process
+require('./renderer.js')
+const {ipcRenderer} = require('electron');
+
+// events from main process
+ipcRenderer.on('serialports', (event, data) => {
+    updateSerialPorts(data);
+});
+
+ipcRenderer.on('connect', function(event, arg) {
+    if (arg == "success")
+    {
+        toast('success', "Connected");
+    }
+    else
+    {
+        toast('danger', "Connecting error");
+    }
+});
+
+ipcRenderer.on('disconnect', function(event, arg) {
+    if (arg == "success")
+    {
+        toast('success', "Disconnected");
+    }
+    else
+    {
+        toast('danger', "Disconnecting error");
+    }
+});
+
+ipcRenderer.on('submit-value', function(event, arg) {
+    if (arg == "success")
+    {
+        toast('success', "Submited");
+    }
+    else
+    {
+        toast('danger', "Submitting error");
+    }
+});
+
+ipcRenderer.on('reset', function(event, arg) {
+    if (arg == "success")
+    {
+        toast('success', "Reset");
+    }
+    else
+    {
+        toast('danger', "Resetting error");
+    }
+});
+
+function updateSerialPorts(serialports)
+{
+    let devices = $("#devices");
+    devices.empty();
+
+    if (serialports.length == 0)
+    {
+        var emptyOption = document.createElement("option");
+        emptyOption.innerHTML = "-";
+        devices.append(emptyOption);
+    }
+    else
+    {
+        for (let i=0; i<serialports.length; ++i)
+        {
+            let port = serialports[i];
+            var option = document.createElement("option");
+            option.value = port.comName;
+            option.innerHTML = port.comName;
+            devices.append(option);
+        }
+    }
+}
+
+function connect()
+{
+    // get selected device
+    let device = $("#devices option:selected");
+
+    let data = {
+        'device': device.attr('value'),
+    };
+
+    ipcRenderer.send('connect', data);
+}
+
+function disconnect()
+{
+    ipcRenderer.send('disconnect');
+}
+
+function submitValue(key)
+{
+    // get selected device
+    let device = $("#devices option:selected");
+    // get element
+    let element = $("#" + key);
+
+    let data = {
+        'device': device.attr('value'),
+        'key': key,
+        'value': element.val()
+    };
+
+    ipcRenderer.send('submit-value', data);
+}
+
+function reset()
+{
+    // get selected device
+    let device = $("#devices option:selected");
+
+    let data = {
+        'device': device.attr('value'),
+    };
+
+    ipcRenderer.send('reset', data);
+}
+
+function toast(level, message)
+{
+    let alert = $("<div class=\"alert alert-" + level + "\" role=\"alert\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\"><span aria-hidden=\"true\">&times;</span></button>" + message + "</div>");
+    $("#toast-container").append(alert);
+    alert.alert();
+    alert.fadeOut(3000, function() { $(this).remove(); });
+}
+</script>
+
+</html>
